@@ -11,11 +11,11 @@ The document below outlines the architecture, required Shopify APIs, key flows, 
 ## Is it possible?
 Yes. Shopify supports all of these requirements via its Admin and Storefront APIs, plus checkout/cart extensions in Shopify Functions and the new Cart Transform API. You can implement commission tracking in your app backend while injecting an insurance line item through a cart/checkout extension that buyers can remove.
 
-## Architecture Overview
+## Architecture Overview (Native PHP)
 
-- **App Server**: A backend (Node.js/TypeScript or Ruby) that handles OAuth, stores merchant settings, calculates commissions, and exposes a simple UI for configuration and reports.
-- **Database**: Stores merchant installs, commission settings, insurance product ID, and calculated commission totals per order. (PostgreSQL or MySQL recommended.)
-- **Shopify Admin API**: Used for reading orders, creating/maintaining the insurance product, and storing app-owned metafields for commission configuration.
+- **App Server**: A native PHP backend that handles OAuth, stores merchant settings, calculates commissions, and exposes a simple UI for configuration and reports. Start with PHP’s built-in server for local dev and add a lightweight router (or plain `index.php` route handling) instead of using Node/Express.
+- **Database**: Stores merchant installs, commission settings, insurance product ID, and calculated commission totals per order. (PostgreSQL or MySQL recommended via PDO.)
+- **Shopify Admin API**: Used for reading orders, creating/maintaining the insurance product, and storing app-owned metafields for commission configuration. The `shopify/shopify-api` Composer package provides REST/GraphQL clients.
 - **Shopify Webhooks**: Subscribe to `orders/create` and optionally `orders/paid` to compute commission amounts on each order and update analytics tables.
 - **Cart/Checkout Extension**: Uses Shopify’s Cart Transform (or Checkout UI) extension to auto-insert the insurance product line item in the cart; the line can be removed by the buyer.
 - **App UI**: Embedded app using App Bridge + Polaris to let merchants set commission %, enable/disable auto-insurance, and view reports.
@@ -23,8 +23,9 @@ Yes. Shopify supports all of these requirements via its Admin and Storefront API
 ## Key Implementation Steps
 
 1. **App Setup**
-   - Use Shopify CLI (`shopify app init`) to scaffold an embedded app with an Admin UI extension (Polaris + App Bridge) and a Cart Transform/Checkout UI extension.
-   - Configure OAuth and store shop tokens after installation.
+   - Install Composer dependencies (`composer install`) to get the Shopify PHP SDK and Dotenv.
+   - Use PHP’s built-in server for local development (`composer run start`).
+   - Configure OAuth endpoints in PHP (`/auth/install`, `/auth/callback`) and store shop tokens after installation using PDO.
 
 2. **Commission Settings**
    - Create a settings page where the merchant sets the commission percentage (e.g., stored in your DB and optionally synced to a shop metafield namespace like `commission.settings`).
@@ -44,7 +45,7 @@ Yes. Shopify supports all of these requirements via its Admin and Storefront API
      - Total gross/net sales
      - Total commission owed/earned
      - Optional time filters (today/7 days/30 days/custom)
-   - Implement a backend endpoint (e.g., `/api/reports?from=...&to=...`) that aggregates data from the commission table.
+   - Implement a backend endpoint in PHP (e.g., `/api/reports?from=...&to=...`) that aggregates data from the commission table using PDO queries.
 
 5. **Insurance Product Handling**
    - On install, create (or let the merchant select) an insurance product/variant (e.g., SKU `INS-001`, price configurable). Store its variant ID in your DB.
@@ -74,54 +75,45 @@ Yes. Shopify supports all of these requirements via its Admin and Storefront API
 - `settings`: `{shop_domain, commission_percentage, include_shipping, include_tax, auto_insurance_enabled, insurance_variant_id}`
 - `commissions`: `{id, shop_domain, order_id, order_name, net_sales, commission_amount, currency, processed_at}`
 
-## Minimal Endpoint Sketch (Express/TypeScript)
+## Minimal Endpoint Sketch (Native PHP)
 
-```ts
-// Commission calculation in an orders webhook handler
-app.post('/webhooks/orders-create', verifyShopifyHmac, async (req, res) => {
-  const order = req.body;
-  const settings = await db.settings.findOne({ shop_domain: order.shop_domain });
-  if (!settings) return res.sendStatus(200);
+```php
+<?php
 
-  const netSales = calculateNetSales(order, settings);
-  const commission = netSales * (settings.commission_percentage / 100);
+require __DIR__ . '/vendor/autoload.php';
 
-  await db.commissions.upsert({
-    shop_domain: order.shop_domain,
-    order_id: order.id,
-    order_name: order.name,
-    net_sales: netSales,
-    commission_amount: commission,
-    currency: order.currency,
-    processed_at: new Date(order.created_at)
-  });
+use Shopify\Clients\Rest as ShopifyRestClient;
 
-  return res.sendStatus(200);
-});
-```
-
-```ts
-// Example cart transform extension pseudo-code
-export function run(input) {
-  const insuranceVariantId = getSetting('insurance_variant_id');
-  if (!insuranceVariantId) return { operations: [] };
-
-  const alreadyHasInsurance = input.cart.lines.some(
-    (line) => line.merchandise?.id === insuranceVariantId
-  );
-
-  if (alreadyHasInsurance) return { operations: [] };
-
-  return {
-    operations: [
-      {
-        type: 'add_cart_line',
-        merchandiseId: insuranceVariantId,
-        quantity: 1,
-      },
-    ],
-  };
+// Verify HMAC header before reading the webhook body
+function verifyWebhook(): bool {
+    $hmacHeader = $_SERVER['HTTP_X_SHOPIFY_HMAC_SHA256'] ?? '';
+    $calculated = base64_encode(hash_hmac('sha256', file_get_contents('php://input'), $_ENV['SHOPIFY_WEBHOOK_SECRET'], true));
+    return hash_equals($calculated, $hmacHeader);
 }
+
+if (parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) === '/webhooks/orders-create' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!verifyWebhook()) {
+        http_response_code(401);
+        exit('Invalid HMAC');
+    }
+
+    $order = json_decode(file_get_contents('php://input'), true);
+    // Fetch merchant settings from your database here
+    $commissionPercent = 10; // Example placeholder
+
+    $netSales = (float) $order['subtotal_price'] ?? 0;
+    $commission = $netSales * ($commissionPercent / 100);
+
+    // Persist commission to your DB using PDO
+    // $pdo->prepare('INSERT INTO commissions ...')->execute([...]);
+
+    http_response_code(200);
+    exit();
+}
+
+// Basic router fall-through
+http_response_code(404);
+echo 'Not Found';
 ```
 
 ## Limitations & Notes
