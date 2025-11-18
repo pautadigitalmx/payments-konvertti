@@ -43,7 +43,9 @@ $requiredEnv = [
     'SHOPIFY_API_KEY',
     'SHOPIFY_API_SECRET',
     'SHOPIFY_API_SCOPES',
+    'SHOPIFY_APP_URL',
     'SHOPIFY_APP_HOSTNAME',
+    'SHOPIFY_WEBHOOK_SECRET',
 ];
 
 $missingEnv = array_values(array_filter($requiredEnv, static function (string $key): bool {

@@ -137,16 +137,21 @@ composer install
 composer run start
 ```
 
-The root `index.php` will respond with a JSON payload indicating whether the required `.env` variables are present and whether the Shopify and Dotenv libraries are loaded. If Composer dependencies (vendor/autoload.php) are missing, the endpoint now returns a `dependencies_missing` response with a clear instruction to run `composer install` instead of failing with a fatal error.
+Copy the provided `.env.example` to `.env`, fill in your credentials, and then start the server. The root `index.php` will respond with a JSON payload indicating whether the required `.env` variables are present and whether the Shopify and Dotenv libraries are loaded. If Composer dependencies (vendor/autoload.php) are missing, the endpoint returns a `dependencies_missing` response with a clear instruction to run `composer install` instead of failing with a fatal error.
 
 ## Environment configuration
 
 Create a `.env` file (copy from `.env.example`) and fill in your credentials before running the app server or Shopify CLI:
 
+Required for the bootstrap health check:
+
 - `SHOPIFY_API_KEY` / `SHOPIFY_API_SECRET`: App credentials from your Shopify Partners dashboard.
 - `SHOPIFY_API_SCOPES`: Comma-separated scopes such as `read_products,write_orders,write_script_tags` to cover product creation and webhook setup.
 - `SHOPIFY_APP_URL` / `SHOPIFY_APP_HOSTNAME`: Public HTTPS URL for your app (e.g., your tunnel/hosting domain) and its hostname.
 - `SHOPIFY_WEBHOOK_SECRET`: Shared secret used to verify webhook HMAC signatures.
+
+Additional runtime settings:
+
 - `SESSION_SECRET`: Random string for signing session cookies.
 - `ENCRYPTION_KEY`: 32-character key for encrypting stored tokens or secrets at rest.
 - `DATABASE_URL`: Connection string for your database (PostgreSQL/MySQL per your chosen stack).
