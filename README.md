@@ -130,16 +130,14 @@ echo 'Not Found';
 
 ## Local PHP bootstrap
 
-The repository now includes a lightweight PHP entry point that loads the required Shopify SDK and environment configuration utili
-ties. Install the Composer dependencies and run the built-in PHP server to verify your environment variables are wired correctly:
+The repository now includes a lightweight PHP entry point that loads the required Shopify SDK and environment configuration utilities. Install the Composer dependencies and run the built-in PHP server to verify your environment variables are wired correctly:
 
 ```bash
 composer install
 composer run start
 ```
 
-The root `index.php` will respond with a JSON payload indicating whether the required `.env` variables are present and whether th
-e Shopify and Dotenv libraries are loaded.
+The root `index.php` will respond with a JSON payload indicating whether the required `.env` variables are present and whether the Shopify and Dotenv libraries are loaded. If Composer dependencies (vendor/autoload.php) are missing, the endpoint now returns a `dependencies_missing` response with a clear instruction to run `composer install` instead of failing with a fatal error.
 
 ## Environment configuration
 
