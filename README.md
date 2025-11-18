@@ -152,3 +152,9 @@ Create a `.env` file (copy from `.env.example`) and fill in your credentials bef
 - `LOG_LEVEL`: Optional logging verbosity (e.g., `info`, `debug`).
 
 Keep the real `.env` file out of version control; only commit `.env.example` with placeholder values.
+
+### Quick start
+
+1. Duplicate `.env.example` to `.env` and populate it with your Shopify app credentials, webhook secret, and database connection details.
+2. Deploy the app to your hosting environment and point Shopify's App URL to your public HTTPS domain.
+3. Hit the root URL (`/`) to see a JSON health payload that confirms required environment variables are present and reminds you of the expected API scopes (`write_orders,read_products,write_script_tags`).
