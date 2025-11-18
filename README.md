@@ -6,10 +6,13 @@ This repository documents how to build a Shopify app that:
 2. Shows reports about order counts, order value, and earned commission.
 3. Auto-adds an “insurance product” to the cart while allowing buyers to remove it.
 
-The document below outlines the architecture, required Shopify APIs, key flows, and suggested implementation details so you can build and deploy the app.
+The document below outlines the architecture, required Shopify APIs, key flows, and suggested implementation details so you can
+build and deploy the app.
 
 ## Is it possible?
-Yes. Shopify supports all of these requirements via its Admin and Storefront APIs, plus checkout/cart extensions in Shopify Functions and the new Cart Transform API. You can implement commission tracking in your app backend while injecting an insurance line item through a cart/checkout extension that buyers can remove.
+Yes. Shopify supports all of these requirements via its Admin and Storefront APIs, plus checkout/cart extensions in Shopify Func
+tions and the new Cart Transform API. You can implement commission tracking in your app backend while injecting an insurance lin
+e item through a cart/checkout extension that buyers can remove.
 
 ## Architecture Overview
 
@@ -27,7 +30,8 @@ Yes. Shopify supports all of these requirements via its Admin and Storefront API
    - Configure OAuth and store shop tokens after installation.
 
 2. **Commission Settings**
-   - Create a settings page where the merchant sets the commission percentage (e.g., stored in your DB and optionally synced to a shop metafield namespace like `commission.settings`).
+   - Create a settings page where the merchant sets the commission percentage (e.g., stored in your DB and optionally synced to
+a shop metafield namespace like `commission.settings`).
    - Validate inputs (0–100%) and allow toggling whether shipping/taxes are included in net sales calculations.
 
 3. **Order Webhook Processing**
@@ -158,3 +162,10 @@ Keep the real `.env` file out of version control; only commit `.env.example` wit
 1. Duplicate `.env.example` to `.env` and populate it with your Shopify app credentials, webhook secret, and database connection details.
 2. Deploy the app to your hosting environment and point Shopify's App URL to your public HTTPS domain.
 3. Hit the root URL (`/`) to see a JSON health payload that confirms required environment variables are present and reminds you of the expected API scopes (`write_orders,read_products,write_script_tags`).
+
+### Health check
+
+- Start the PHP built-in server locally: `php -S 0.0.0.0:8000 index.php`.
+- Visit `http://localhost:8000/` to inspect the JSON payload.
+- The endpoint returns **200 OK** when all required environment variables are present, or **503 Service Unavailable** when keys are missing, along with the missing list.
+- The `timestamp_utc` field helps verify the server clock and confirms that the response is fresh.
