@@ -136,6 +136,19 @@ export function run(input) {
 - Publish and test the cart/checkout extension for auto-inserting the insurance product.
 - Add tests for webhook processing and report aggregation.
 
+## Local PHP bootstrap
+
+The repository now includes a lightweight PHP entry point that loads the required Shopify SDK and environment configuration utili
+ties. Install the Composer dependencies and run the built-in PHP server to verify your environment variables are wired correctly:
+
+```bash
+composer install
+composer run start
+```
+
+The root `index.php` will respond with a JSON payload indicating whether the required `.env` variables are present and whether th
+e Shopify and Dotenv libraries are loaded.
+
 ## Environment configuration
 
 Create a `.env` file (copy from `.env.example`) and fill in your credentials before running the app server or Shopify CLI:
