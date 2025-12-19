@@ -1,4 +1,5 @@
-import { Form, json, redirect, useActionData, useLoaderData } from "react-router";
+import { json } from "@react-router/node";
+import { Form, redirect, useActionData, useLoaderData } from "react-router";
 import {
   createAuthSession,
   getAuthSession,
