@@ -3,21 +3,68 @@ import { Form, useActionData, useLoaderData } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import { getAuthSession, updateAuthSession } from "../utils/auth.server";
+import prisma from "../db.server";
 
 export const loader = async ({ request }) => {
   const session = await getAuthSession(request);
   await authenticate.admin(request);
 
+  const saved = await prisma.commissionSetting.findFirst({
+    orderBy: { updatedAt: "desc" },
+  });
+
   const fallbackCommission = 8;
+  const commissionValue = saved?.value ?? session.commission ?? fallbackCommission;
 
   return {
-    commission: session.commission ?? fallbackCommission,
+    commission: commissionValue,
     defaultCommission: fallbackCommission,
+    testResult: null,
   };
 };
 
 export const action = async ({ request }) => {
   const formData = await request.formData();
+  const intent = formData.get("_action");
+
+  if (intent === "testConnection") {
+    try {
+      const [row] =
+        (await prisma.$queryRaw`SELECT inet_server_addr() AS ip`) ?? [];
+
+      return Response.json({
+        testResult: {
+          ok: true,
+          ip: row?.ip ?? "unknown",
+          message: row?.ip
+            ? `Connected successfully. Database server IP: ${row.ip}`
+            : "Connected successfully. Unable to determine server IP.",
+        },
+      });
+    } catch (error) {
+      let outboundIp = null;
+      try {
+        const resp = await fetch("https://api.ipify.org?format=json");
+        const data = await resp.json();
+        outboundIp = data?.ip;
+      } catch {
+        outboundIp = null;
+      }
+
+      return Response.json(
+        {
+          testResult: {
+            ok: false,
+            ip: outboundIp,
+            message:
+              "Connection failed. Please whitelist this app server IP and confirm host, port, database, user, password, and SSL mode.",
+          },
+        },
+        { status: 500 },
+      );
+    }
+  }
+
   const commissionValue = formData.get("commission");
   const commission = Number(commissionValue);
 
@@ -31,6 +78,12 @@ export const action = async ({ request }) => {
       { status: 400 },
     );
   }
+
+  await prisma.commissionSetting.upsert({
+    where: { id: 1 },
+    update: { value: commission },
+    create: { id: 1, value: commission },
+  });
 
   const cookie = await updateAuthSession(request, { commission });
 
@@ -258,6 +311,53 @@ export default function Index() {
                 </div>
               ))}
             </div>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gap: "12px",
+              padding: "16px",
+              border: "1px solid var(--s-border, #d9e1ec)",
+              borderRadius: "12px",
+            }}
+          >
+            <p style={{ margin: 0, fontWeight: 600 }}>Test database connection</p>
+            <p style={{ margin: 0, color: "#637381" }}>
+              Validate connectivity and get the IP to whitelist if needed.
+            </p>
+            <Form method="post" style={{ display: "grid", gap: "8px" }}>
+              <input type="hidden" name="_action" value="testConnection" />
+              <s-button type="submit" variant="tertiary">
+                Run connection test
+              </s-button>
+            </Form>
+            {(actionData?.testResult || loaderData.testResult) && (
+              <div
+                style={{
+                  padding: "10px 12px",
+                  borderRadius: "10px",
+                  background: (actionData?.testResult || loaderData.testResult).ok
+                    ? "#ecfdf3"
+                    : "#fef2f2",
+                  border: "1px solid #d1fae5",
+                }}
+              >
+                <p style={{ margin: 0, fontWeight: 600 }}>
+                  {(actionData?.testResult || loaderData.testResult).ok
+                    ? "Connection successful"
+                    : "Connection failed"}
+                </p>
+                <p style={{ margin: "4px 0 0 0", color: "#111827" }}>
+                  {(actionData?.testResult || loaderData.testResult).message}
+                </p>
+                {(actionData?.testResult || loaderData.testResult).ip ? (
+                  <p style={{ margin: "4px 0 0 0", color: "#374151" }}>
+                    IP to whitelist: {(actionData?.testResult || loaderData.testResult).ip}
+                  </p>
+                ) : null}
+              </div>
+            )}
           </div>
         </div>
       </s-section>
