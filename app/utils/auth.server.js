@@ -10,6 +10,11 @@ const authCookie = createCookie("app-auth", {
 const VALID_USERNAME = process.env.APP_USERNAME || "joseluis";
 const VALID_PASSWORD = process.env.APP_PASSWORD || "konvertti_123";
 
+const defaultSession = {
+  authenticated: false,
+  commission: null,
+};
+
 export function isSafeRedirect(to) {
   return Boolean(to) && to.startsWith("/") && !to.startsWith("//");
 }
@@ -17,7 +22,10 @@ export function isSafeRedirect(to) {
 export async function getAuthSession(request) {
   const cookieHeader = request.headers.get("Cookie");
 
-  return (await authCookie.parse(cookieHeader)) ?? {};
+  return {
+    ...defaultSession,
+    ...((await authCookie.parse(cookieHeader)) ?? {}),
+  };
 }
 
 export async function requireAuth(request) {
@@ -35,7 +43,7 @@ export async function requireAuth(request) {
 
 export async function createAuthSession() {
   return authCookie.serialize(
-    { authenticated: true },
+    { ...defaultSession, authenticated: true },
     {
       maxAge: 60 * 60 * 24,
     },
@@ -44,6 +52,17 @@ export async function createAuthSession() {
 
 export async function clearAuthSession() {
   return authCookie.serialize("", { maxAge: 0 });
+}
+
+export async function updateAuthSession(request, updates) {
+  const session = await getAuthSession(request);
+
+  return authCookie.serialize(
+    { ...session, ...updates, authenticated: true },
+    {
+      maxAge: 60 * 60 * 24,
+    },
+  );
 }
 
 export function validateCredentials(username, password) {
