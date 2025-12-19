@@ -4,12 +4,13 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import { getAuthSession, updateAuthSession } from "../utils/auth.server";
 import prisma, { createPrismaClient } from "../db.server";
+import { database } from "../credentials";
 
 export const loader = async ({ request }) => {
   const session = await getAuthSession(request);
   await authenticate.admin(request);
 
-  const connectionString = session.connectionString || null;
+  const connectionString = session.connectionString || database.url || null;
 
   let saved = null;
   const client =
@@ -48,6 +49,7 @@ export const action = async ({ request }) => {
     const activeConnection =
       formData.get("connectionString") ||
       formData.get("existingConnectionString") ||
+      database.url ||
       null;
 
     try {
@@ -153,7 +155,8 @@ export const action = async ({ request }) => {
     );
   }
 
-  const activeConnection = (await getAuthSession(request)).connectionString || null;
+  const activeConnection =
+    (await getAuthSession(request)).connectionString || database.url || null;
 
   if (activeConnection) {
     const client = createPrismaClient(activeConnection);
