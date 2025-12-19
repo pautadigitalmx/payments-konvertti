@@ -13,6 +13,7 @@ const VALID_PASSWORD = process.env.APP_PASSWORD || "konvertti_123";
 const defaultSession = {
   authenticated: false,
   commission: null,
+  connectionString: null,
 };
 
 export function isSafeRedirect(to) {

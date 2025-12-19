@@ -3,21 +3,29 @@ import { Form, useActionData, useLoaderData } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import { getAuthSession, updateAuthSession } from "../utils/auth.server";
-import prisma from "../db.server";
+import prisma, { createPrismaClient } from "../db.server";
 
 export const loader = async ({ request }) => {
   const session = await getAuthSession(request);
   await authenticate.admin(request);
 
+  const connectionString = session.connectionString || null;
+
   let saved = null;
-  if (prisma?.commissionSetting) {
+  const client =
+    connectionString && prisma?.commissionSetting
+      ? createPrismaClient(connectionString)
+      : null;
+  if (client?.commissionSetting) {
     try {
-      saved = await prisma.commissionSetting.findFirst({
+      saved = await client.commissionSetting.findFirst({
         orderBy: { updatedAt: "desc" },
       });
     } catch (error) {
       console.error("Failed to read commission setting:", error);
       saved = null;
+    } finally {
+      await client?.$disconnect();
     }
   }
 
@@ -27,6 +35,7 @@ export const loader = async ({ request }) => {
   return {
     commission: commissionValue,
     defaultCommission: fallbackCommission,
+    connectionString,
     testResult: null,
   };
 };
@@ -36,9 +45,16 @@ export const action = async ({ request }) => {
   const intent = formData.get("_action");
 
   if (intent === "testConnection") {
+    const activeConnection =
+      formData.get("connectionString") ||
+      formData.get("existingConnectionString") ||
+      null;
+
     try {
+      const testClient = createPrismaClient(activeConnection || undefined);
       const [row] =
-        (await prisma.$queryRaw`SELECT inet_server_addr() AS ip`) ?? [];
+        (await testClient.$queryRaw`SELECT inet_server_addr() AS ip`) ?? [];
+      await testClient.$disconnect();
 
       return Response.json({
         testResult: {
@@ -73,6 +89,56 @@ export const action = async ({ request }) => {
     }
   }
 
+  if (intent === "saveConnection") {
+    const connectionString = formData.get("connectionString")?.toString().trim();
+
+    if (!connectionString) {
+      return Response.json(
+        {
+          errors: { connection: "Connection string is required" },
+        },
+        { status: 400 },
+      );
+    }
+
+    try {
+      const client = createPrismaClient(connectionString);
+      await client.$queryRaw`SELECT 1`;
+      await client.$disconnect();
+
+      const cookie = await updateAuthSession(request, {
+        connectionString,
+      });
+
+      return Response.json(
+        {
+          connectionString,
+          testResult: {
+            ok: true,
+            ip: null,
+            message: "Connection string saved successfully.",
+          },
+        },
+        {
+          headers: {
+            "Set-Cookie": cookie,
+          },
+        },
+      );
+    } catch (error) {
+      console.error("Failed to save connection string:", error);
+      return Response.json(
+        {
+          errors: {
+            connection:
+              "Connection failed. Please verify host, port, database, user, password, and SSL mode.",
+          },
+        },
+        { status: 500 },
+      );
+    }
+  }
+
   const commissionValue = formData.get("commission");
   const commission = Number(commissionValue);
 
@@ -87,15 +153,22 @@ export const action = async ({ request }) => {
     );
   }
 
-  if (prisma?.commissionSetting) {
-    try {
-      await prisma.commissionSetting.upsert({
-        where: { id: 1 },
-        update: { value: commission },
-        create: { id: 1, value: commission },
-      });
-    } catch (error) {
-      console.error("Failed to persist commission:", error);
+  const activeConnection = (await getAuthSession(request)).connectionString || null;
+
+  if (activeConnection) {
+    const client = createPrismaClient(activeConnection);
+    if (client?.commissionSetting) {
+      try {
+        await client.commissionSetting.upsert({
+          where: { id: 1 },
+          update: { value: commission },
+          create: { id: 1, value: commission },
+        });
+      } catch (error) {
+        console.error("Failed to persist commission:", error);
+      } finally {
+        await client.$disconnect();
+      }
     }
   }
 
@@ -336,15 +409,40 @@ export default function Index() {
               borderRadius: "12px",
             }}
           >
-            <p style={{ margin: 0, fontWeight: 600 }}>Test database connection</p>
+            <p style={{ margin: 0, fontWeight: 600 }}>Database connection</p>
             <p style={{ margin: 0, color: "#637381" }}>
-              Validate connectivity and get the IP to whitelist if needed.
+              Update the connection string or validate connectivity and get the IP
+              to whitelist if needed.
             </p>
-            <Form method="post" style={{ display: "grid", gap: "8px" }}>
-              <input type="hidden" name="_action" value="testConnection" />
-              <s-button type="submit" variant="tertiary">
-                Run connection test
-              </s-button>
+            <Form method="post" style={{ display: "grid", gap: "10px" }}>
+              <label style={{ display: "grid", gap: "4px" }}>
+                <span style={{ fontWeight: 600 }}>Connection string</span>
+                <input
+                  name="connectionString"
+                  type="text"
+                  placeholder="postgres://user:pass@host:5432/db?sslmode=require"
+                  style={{
+                    padding: "10px",
+                    borderRadius: "10px",
+                    border: "1px solid #d9e1ec",
+                  }}
+                  defaultValue={loaderData.connectionString || ""}
+                  required
+                />
+              </label>
+              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                <s-button type="submit" name="_action" value="saveConnection">
+                  Save connection
+                </s-button>
+                <s-button
+                  type="submit"
+                  name="_action"
+                  value="testConnection"
+                  variant="tertiary"
+                >
+                  Run connection test
+                </s-button>
+              </div>
             </Form>
             {(actionData?.testResult || loaderData.testResult) && (
               <div
