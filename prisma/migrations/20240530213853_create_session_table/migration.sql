@@ -1,20 +1,21 @@
 -- CreateTable
-CREATE TABLE "Session" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "shop" TEXT NOT NULL,
-    "state" TEXT NOT NULL,
-    "isOnline" BOOLEAN NOT NULL DEFAULT false,
-    "scope" TEXT,
-    "expires" DATETIME,
-    "accessToken" TEXT NOT NULL,
-    "userId" BIGINT,
-    "firstName" TEXT,
-    "lastName" TEXT,
-    "email" TEXT,
-    "accountOwner" BOOLEAN NOT NULL DEFAULT false,
-    "locale" TEXT,
-    "collaborator" BOOLEAN DEFAULT false,
-    "emailVerified" BOOLEAN DEFAULT false,
-    "refreshToken" TEXT,
-    "refreshTokenExpires" DATETIME
-);
+CREATE TABLE `Session` (
+  `id` VARCHAR(255) NOT NULL,
+  `shop` VARCHAR(255) NOT NULL,
+  `state` VARCHAR(255) NOT NULL,
+  `isOnline` TINYINT(1) NOT NULL DEFAULT 0,
+  `scope` TEXT NULL,
+  `expires` DATETIME NULL,
+  `accessToken` TEXT NOT NULL,
+  `userId` BIGINT NULL,
+  `firstName` VARCHAR(255) NULL,
+  `lastName` VARCHAR(255) NULL,
+  `email` VARCHAR(255) NULL,
+  `accountOwner` TINYINT(1) NOT NULL DEFAULT 0,
+  `locale` VARCHAR(50) NULL,
+  `collaborator` TINYINT(1) NULL DEFAULT 0,
+  `emailVerified` TINYINT(1) NULL DEFAULT 0,
+  `refreshToken` TEXT NULL,
+  `refreshTokenExpires` DATETIME NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

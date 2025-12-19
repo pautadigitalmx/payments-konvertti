@@ -1,5 +1,5 @@
 import { createCookie, redirect } from "react-router";
-import { loginCredentials } from "./credentials.js";
+import { loginCredentials } from "../credentials.js";
 
 const authCookie = createCookie("app-auth", {
   httpOnly: true,
