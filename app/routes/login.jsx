@@ -24,8 +24,8 @@ export const loader = async ({ request }) => {
 
 export const action = async ({ request }) => {
   const formData = await request.formData();
-  const username = formData.get("username")?.toString();
-  const password = formData.get("password")?.toString();
+  const username = formData.get("username")?.toString().trim();
+  const password = formData.get("password")?.toString().trim();
   const redirectTo = formData.get("redirectTo")?.toString();
 
   const result = validateCredentials(username, password);
@@ -42,7 +42,7 @@ export const action = async ({ request }) => {
 
   const cookie = await createAuthSession();
 
-  throw redirect(isSafeRedirect(redirectTo) ? redirectTo : defaultRedirect, {
+  return redirect(isSafeRedirect(redirectTo) ? redirectTo : defaultRedirect, {
     headers: {
       "Set-Cookie": cookie,
     },
