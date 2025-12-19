@@ -2,8 +2,10 @@ import { Outlet, useLoaderData, useRouteError } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
 import { authenticate } from "../shopify.server";
+import { requireAuth } from "../utils/auth.server";
 
 export const loader = async ({ request }) => {
+  await requireAuth(request);
   await authenticate.admin(request);
 
   // eslint-disable-next-line no-undef
