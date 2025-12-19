@@ -9,9 +9,17 @@ export const loader = async ({ request }) => {
   const session = await getAuthSession(request);
   await authenticate.admin(request);
 
-  const saved = await prisma.commissionSetting.findFirst({
-    orderBy: { updatedAt: "desc" },
-  });
+  let saved = null;
+  if (prisma?.commissionSetting) {
+    try {
+      saved = await prisma.commissionSetting.findFirst({
+        orderBy: { updatedAt: "desc" },
+      });
+    } catch (error) {
+      console.error("Failed to read commission setting:", error);
+      saved = null;
+    }
+  }
 
   const fallbackCommission = 8;
   const commissionValue = saved?.value ?? session.commission ?? fallbackCommission;
@@ -79,11 +87,17 @@ export const action = async ({ request }) => {
     );
   }
 
-  await prisma.commissionSetting.upsert({
-    where: { id: 1 },
-    update: { value: commission },
-    create: { id: 1, value: commission },
-  });
+  if (prisma?.commissionSetting) {
+    try {
+      await prisma.commissionSetting.upsert({
+        where: { id: 1 },
+        update: { value: commission },
+        create: { id: 1, value: commission },
+      });
+    } catch (error) {
+      console.error("Failed to persist commission:", error);
+    }
+  }
 
   const cookie = await updateAuthSession(request, { commission });
 
