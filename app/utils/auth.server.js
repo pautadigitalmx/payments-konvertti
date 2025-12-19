@@ -1,4 +1,5 @@
 import { createCookie, redirect } from "react-router";
+import { loginCredentials } from "./credentials.js";
 
 const authCookie = createCookie("app-auth", {
   httpOnly: true,
@@ -7,8 +8,8 @@ const authCookie = createCookie("app-auth", {
   path: "/",
 });
 
-const VALID_USERNAME = process.env.APP_USERNAME || "joseluis";
-const VALID_PASSWORD = process.env.APP_PASSWORD || "konvertti_123";
+const VALID_USERNAME = process.env.APP_USERNAME || loginCredentials.username;
+const VALID_PASSWORD = process.env.APP_PASSWORD || loginCredentials.password;
 
 const defaultSession = {
   authenticated: false,
