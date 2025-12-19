@@ -2,7 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { database } from "./credentials.js";
 
 const fallbackUrl =
-  process.env.DATABASE_URL || database.url || "postgres://localhost:5432/postgres";
+  process.env.DATABASE_URL || database.url || "mysql://root@localhost:3306/mysql";
 
 let sessionTableEnsured = false;
 
@@ -11,24 +11,24 @@ async function ensureSessionTable(client) {
 
   try {
     await client.$executeRawUnsafe(`
-      CREATE TABLE IF NOT EXISTS "Session" (
-        id TEXT PRIMARY KEY,
-        shop TEXT NOT NULL,
-        state TEXT NOT NULL,
-        "isOnline" BOOLEAN NOT NULL DEFAULT FALSE,
+      CREATE TABLE IF NOT EXISTS Session (
+        id VARCHAR(191) PRIMARY KEY,
+        shop VARCHAR(255) NOT NULL,
+        state VARCHAR(255) NOT NULL,
+        isOnline BOOLEAN NOT NULL DEFAULT FALSE,
         scope TEXT,
-        expires TIMESTAMP,
-        "accessToken" TEXT NOT NULL,
-        "userId" BIGINT,
-        "firstName" TEXT,
-        "lastName" TEXT,
-        email TEXT,
-        "accountOwner" BOOLEAN NOT NULL DEFAULT FALSE,
-        locale TEXT,
+        expires DATETIME,
+        accessToken TEXT NOT NULL,
+        userId BIGINT,
+        firstName VARCHAR(255),
+        lastName VARCHAR(255),
+        email VARCHAR(255),
+        accountOwner BOOLEAN NOT NULL DEFAULT FALSE,
+        locale VARCHAR(255),
         collaborator BOOLEAN DEFAULT FALSE,
-        "emailVerified" BOOLEAN DEFAULT FALSE,
-        "refreshToken" TEXT,
-        "refreshTokenExpires" TIMESTAMP
+        emailVerified BOOLEAN DEFAULT FALSE,
+        refreshToken TEXT,
+        refreshTokenExpires DATETIME
       );
     `);
     sessionTableEnsured = true;

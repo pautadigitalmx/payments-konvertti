@@ -7,5 +7,5 @@ export const loginCredentials = {
 };
 
 export const database = {
-  url: "postgres://069ed3512f523cfbaa74d69d0709ab6fe158a25d622e821310d12347a731e10b:sk_ka5js4A-9qV1FTRK6sTq_@db.prisma.io:5432/postgres?sslmode=require",
+  url: "mysql://konvertt_pagos:konvertti_123@konvertti.com:3306/konvertt_pagos",
 };
