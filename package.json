@@ -3,6 +3,7 @@
   "private": true,
   "scripts": {
     "build": "react-router build",
+    "predev": "node ./scripts/write-db-env.js",
     "dev": "shopify app dev",
     "config:link": "shopify app config link",
     "generate": "shopify app generate",
@@ -11,7 +12,7 @@
     "env": "shopify app env",
     "start": "react-router-serve ./build/server/index.js",
     "docker-start": "npm run setup && npm run start",
-    "setup": "node ./scripts/run-with-db-url.js prisma generate && node ./scripts/run-with-db-url.js prisma migrate deploy",
+    "setup": "node ./scripts/write-db-env.js && node ./scripts/run-with-db-url.js prisma generate && node ./scripts/run-with-db-url.js prisma migrate deploy",
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint --cache --cache-location ./node_modules/.cache/eslint .",
     "shopify": "shopify",
     "prisma": "node ./scripts/run-with-db-url.js prisma",
