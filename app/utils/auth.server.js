@@ -7,8 +7,8 @@ const authCookie = createCookie("app-auth", {
   path: "/",
 });
 
-const VALID_USERNAME = process.env.APP_USERNAME || "admin";
-const VALID_PASSWORD = process.env.APP_PASSWORD || "password";
+const VALID_USERNAME = process.env.APP_USERNAME || "joseluis";
+const VALID_PASSWORD = process.env.APP_PASSWORD || "konvertti_123";
 
 export function isSafeRedirect(to) {
   return Boolean(to) && to.startsWith("/") && !to.startsWith("//");
