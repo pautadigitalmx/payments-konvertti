@@ -1,4 +1,3 @@
-import { json } from "@react-router/node";
 import { Form, redirect, useActionData, useLoaderData } from "react-router";
 import {
   createAuthSession,
@@ -18,7 +17,7 @@ export const loader = async ({ request }) => {
     throw redirect(isSafeRedirect(redirectTo) ? redirectTo : defaultRedirect);
   }
 
-  return json({
+  return Response.json({
     redirectTo: isSafeRedirect(redirectTo) ? redirectTo : defaultRedirect,
   });
 };
@@ -32,7 +31,7 @@ export const action = async ({ request }) => {
   const result = validateCredentials(username, password);
 
   if (!result.success) {
-    return json(
+    return Response.json(
       {
         errors: result.errors,
         fields: { username: username ?? "", password: password ?? "" },
