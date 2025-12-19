@@ -3,10 +3,10 @@ import { Form, useActionData, useFetcher, useLoaderData } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
-import { requireAuth, updateAuthSession } from "../utils/auth.server";
+import { getAuthSession, updateAuthSession } from "../utils/auth.server";
 
 export const loader = async ({ request }) => {
-  const session = await requireAuth(request);
+  const session = await getAuthSession(request);
   await authenticate.admin(request);
 
   return { commission: session.commission };
