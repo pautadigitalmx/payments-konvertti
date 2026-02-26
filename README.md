@@ -166,3 +166,9 @@ Additional runtime settings:
 - `LOG_LEVEL`: Optional logging verbosity (e.g., `info`, `debug`).
 
 Keep the real `.env` file out of version control; only commit `.env.example` with placeholder values.
+
+
+## Token encryption details
+
+The exact `access_token_enc` algorithm and payload layout are documented in `docs/TOKEN_ENCRYPTION.md` and implemented in `src/Security/TokenCipher.php`.
+
